@@ -35,8 +35,14 @@ type createTaskRequest struct {
 }
 
 func (t *TaskHandler) HandleTasks(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	if r.Method == http.MethodGet {
-		list := t.serv.List()
+		list, errList := t.serv.List(ctx)
+		if errList != nil {
+			handleError(w, errList)
+			return
+		}
 
 		writeJSON(w, http.StatusOK, list)
 	} else if r.Method == http.MethodPost {
@@ -46,7 +52,7 @@ func (t *TaskHandler) HandleTasks(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		task, err := t.serv.Create(req.Title)
+		task, err := t.serv.Create(ctx, req.Title)
 		if err != nil {
 			handleError(w, err)
 			return
@@ -67,6 +73,7 @@ type updateTaskRequest struct {
 
 func (t *TaskHandler) HandleTaskByID(w http.ResponseWriter, r *http.Request) {
 	idStr := strings.TrimPrefix(r.URL.Path, "/tasks/")
+	ctx := r.Context()
 
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
@@ -75,7 +82,7 @@ func (t *TaskHandler) HandleTaskByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == http.MethodGet {
-		task, err := t.serv.GetByID(id)
+		task, err := t.serv.GetByID(ctx, id)
 		if err != nil {
 			handleError(w, err)
 			return
@@ -90,7 +97,7 @@ func (t *TaskHandler) HandleTaskByID(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		task, err := t.serv.Update(req.Title, id, req.Done)
+		task, err := t.serv.Update(ctx, id, req.Title, req.Done)
 		if err != nil {
 			handleError(w, err)
 			return
@@ -98,7 +105,7 @@ func (t *TaskHandler) HandleTaskByID(w http.ResponseWriter, r *http.Request) {
 
 		writeJSON(w, http.StatusOK, task)
 	} else if r.Method == http.MethodDelete {
-		err := t.serv.Delete(id)
+		err := t.serv.Delete(ctx, id)
 		if err != nil {
 			handleError(w, err)
 			return

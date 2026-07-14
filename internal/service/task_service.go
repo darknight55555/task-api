@@ -1,16 +1,17 @@
 package service
 
 import (
+	"context"
 	"strings"
 	"task-api/internal/model"
 )
 
 type TaskRepository interface {
-	Create(title string) model.Task
-	List() []model.Task
-	GetByID(id int) (model.Task, error)
-	Update(id int, title string, done bool) (model.Task, error)
-	Delete(id int) error
+	Create(ctx context.Context, title string) (model.Task, error)
+	List(ctx context.Context) ([]model.Task, error)
+	GetByID(ctx context.Context, id int) (model.Task, error)
+	Update(ctx context.Context, id int, title string, done bool) (model.Task, error)
+	Delete(ctx context.Context, id int) error
 }
 
 type TaskService struct {
@@ -25,28 +26,12 @@ func NewTaskService(repo TaskRepository) *TaskService {
 	return &taskService
 }
 
-func (t *TaskService) Create(title string) (model.Task, error) {
+func (t *TaskService) Create(ctx context.Context, title string) (model.Task, error) {
 	if strings.TrimSpace(title) == "" {
 		return model.Task{}, ErrInvalidTitle
 	}
 
-	task := t.repo.Create(title)
-
-	return task, nil
-}
-
-func (t *TaskService) List() []model.Task {
-	tasks := t.repo.List()
-
-	return tasks
-}
-
-func (t *TaskService) GetByID(id int) (model.Task, error) {
-	if id <= 0 {
-		return model.Task{}, ErrInvalidID
-	}
-
-	task, err := t.repo.GetByID(id)
+	task, err := t.repo.Create(ctx, title)
 	if err != nil {
 		return model.Task{}, err
 	}
@@ -54,14 +39,36 @@ func (t *TaskService) GetByID(id int) (model.Task, error) {
 	return task, nil
 }
 
-func (t *TaskService) Update(title string, id int, done bool) (model.Task, error) {
+func (t *TaskService) List(ctx context.Context) ([]model.Task, error) {
+	tasks, err := t.repo.List(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return tasks, nil
+}
+
+func (t *TaskService) GetByID(ctx context.Context, id int) (model.Task, error) {
+	if id <= 0 {
+		return model.Task{}, ErrInvalidID
+	}
+
+	task, err := t.repo.GetByID(ctx, id)
+	if err != nil {
+		return model.Task{}, err
+	}
+
+	return task, nil
+}
+
+func (t *TaskService) Update(ctx context.Context, id int, title string, done bool) (model.Task, error) {
 	if strings.TrimSpace(title) == "" {
 		return model.Task{}, ErrInvalidTitle
 	} else if id <= 0 {
 		return model.Task{}, ErrInvalidID
 	}
 
-	task, err := t.repo.Update(id, title, done)
+	task, err := t.repo.Update(ctx, id, title, done)
 	if err != nil {
 		return model.Task{}, err
 	}
@@ -69,12 +76,12 @@ func (t *TaskService) Update(title string, id int, done bool) (model.Task, error
 	return task, nil
 }
 
-func (t *TaskService) Delete(id int) error {
+func (t *TaskService) Delete(ctx context.Context, id int) error {
 	if id <= 0 {
 		return ErrInvalidID
 	}
 
-	if err := t.repo.Delete(id); err != nil {
+	if err := t.repo.Delete(ctx, id); err != nil {
 		return err
 	}
 

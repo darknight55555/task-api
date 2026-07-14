@@ -4,6 +4,8 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"os"
+	"strings"
 
 	"task-api/internal/db"
 	"task-api/internal/handler"
@@ -13,21 +15,22 @@ import (
 
 func main() {
 	ctx := context.Background()
-	connString := "postgres://darkxam:1@localhost:5432/task_api?sslmode=disable"
 
-	pool, errConnect := db.ConnectPostgres(ctx, connString)
+	dbURL := os.Getenv("DB_URL")
+	if strings.TrimSpace(dbURL) == "" {
+		log.Fatal("DB_URL is required")
+	}
+
+	pool, errConnect := db.ConnectPostgres(ctx, dbURL)
 	if errConnect != nil {
 		log.Fatal(errConnect)
-		return
 	}
 
 	log.Println("database connected")
 
 	defer pool.Close()
 
-	//postgresRepo := repository.NewPostgresTaskRepository(pool)
-
-	repo := repository.NewMemoryTaskRepository()
+	repo := repository.NewPostgresTaskRepository(pool)
 	serv := service.NewTaskService(repo)
 	taskHandler := handler.NewTaskHandler(serv)
 

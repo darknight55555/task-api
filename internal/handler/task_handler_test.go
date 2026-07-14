@@ -71,7 +71,7 @@ func TestHandleTasksPost(t *testing.T) {
 	h.HandleTasks(rr, req)
 
 	if rr.Code != http.StatusCreated {
-		t.Fatalf("expected status	 %d, got %d", http.StatusCreated, rr.Code)
+		t.Fatalf("expected status %d, got %d", http.StatusCreated, rr.Code)
 	}
 }
 
@@ -182,7 +182,7 @@ func TestHandleTasksByIDPatchBadRequestInvalidTitle(t *testing.T) {
 	h.HandleTaskByID(rrPatch, reqPatch)
 
 	if rrPatch.Code != http.StatusBadRequest {
-		t.Fatalf("expected status %d, got %d", http.StatusOK, rrPatch.Code)
+		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, rrPatch.Code)
 	}
 }
 

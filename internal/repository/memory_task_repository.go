@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"sync"
 	"task-api/internal/model"
 	"time"
@@ -21,7 +22,7 @@ func NewMemoryTaskRepository() *MemoryTaskRepository {
 	return &taskRepository
 }
 
-func (m *MemoryTaskRepository) Create(title string) model.Task {
+func (m *MemoryTaskRepository) Create(ctx context.Context, title string) (model.Task, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -35,10 +36,10 @@ func (m *MemoryTaskRepository) Create(title string) model.Task {
 
 	m.tasks[task.ID] = task
 
-	return m.tasks[task.ID]
+	return m.tasks[task.ID], nil
 }
 
-func (m *MemoryTaskRepository) List() []model.Task {
+func (m *MemoryTaskRepository) List(ctx context.Context) ([]model.Task, error) {
 	list := []model.Task{}
 
 	m.mu.RLock()
@@ -48,10 +49,10 @@ func (m *MemoryTaskRepository) List() []model.Task {
 		list = append(list, v)
 	}
 
-	return list
+	return list, nil
 }
 
-func (m *MemoryTaskRepository) GetByID(id int) (model.Task, error) {
+func (m *MemoryTaskRepository) GetByID(ctx context.Context, id int) (model.Task, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -63,7 +64,7 @@ func (m *MemoryTaskRepository) GetByID(id int) (model.Task, error) {
 	return task, nil
 }
 
-func (m *MemoryTaskRepository) Update(id int, title string, done bool) (model.Task, error) {
+func (m *MemoryTaskRepository) Update(ctx context.Context, id int, title string, done bool) (model.Task, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -79,7 +80,7 @@ func (m *MemoryTaskRepository) Update(id int, title string, done bool) (model.Ta
 	return task, nil
 }
 
-func (m *MemoryTaskRepository) Delete(id int) error {
+func (m *MemoryTaskRepository) Delete(ctx context.Context, id int) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
