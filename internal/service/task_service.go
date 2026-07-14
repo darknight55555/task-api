@@ -8,7 +8,7 @@ import (
 
 type TaskRepository interface {
 	Create(ctx context.Context, title string) (model.Task, error)
-	List(ctx context.Context) ([]model.Task, error)
+	List(ctx context.Context, filter model.TaskFilter) ([]model.Task, error)
 	GetByID(ctx context.Context, id int) (model.Task, error)
 	Update(ctx context.Context, id int, title string, done bool) (model.Task, error)
 	Delete(ctx context.Context, id int) error
@@ -39,8 +39,8 @@ func (t *TaskService) Create(ctx context.Context, title string) (model.Task, err
 	return task, nil
 }
 
-func (t *TaskService) List(ctx context.Context) ([]model.Task, error) {
-	tasks, err := t.repo.List(ctx)
+func (t *TaskService) List(ctx context.Context, filter model.TaskFilter) ([]model.Task, error) {
+	tasks, err := t.repo.List(ctx, filter)
 	if err != nil {
 		return nil, err
 	}

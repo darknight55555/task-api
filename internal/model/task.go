@@ -8,3 +8,7 @@ type Task struct {
 	Done      bool      `json:"done"`
 	CreatedAt time.Time `json:"created_at"`
 }
+
+type TaskFilter struct {
+	Done *bool
+}

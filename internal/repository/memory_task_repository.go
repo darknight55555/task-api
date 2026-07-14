@@ -39,13 +39,17 @@ func (m *MemoryTaskRepository) Create(ctx context.Context, title string) (model.
 	return m.tasks[task.ID], nil
 }
 
-func (m *MemoryTaskRepository) List(ctx context.Context) ([]model.Task, error) {
+func (m *MemoryTaskRepository) List(ctx context.Context, filter model.TaskFilter) ([]model.Task, error) {
 	list := []model.Task{}
 
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
 	for _, v := range m.tasks {
+		if filter.Done != nil && v.Done != *filter.Done {
+			continue
+		}
+
 		list = append(list, v)
 	}
 

@@ -20,6 +20,7 @@ func NewPostgresTaskRepository(pool *pgxpool.Pool) *PostgresTaskRepository {
 
 	return &postgresTaskRepository
 }
+
 // Create — QueryRow + INSERT RETURNING
 func (p *PostgresTaskRepository) Create(ctx context.Context, title string) (model.Task, error) {
 	var task model.Task
@@ -42,21 +43,37 @@ func (p *PostgresTaskRepository) Create(ctx context.Context, title string) (mode
 
 	return task, nil
 }
-// List — Query + rows.Next
-func (p *PostgresTaskRepository) List(ctx context.Context) ([]model.Task, error) {
-	sqlQuery := `
-		SELECT id, title, done, created_at
-		FROM tasks
-		ORDER BY id;
-	`
 
-	rows, errQuery := p.pool.Query(ctx, sqlQuery)
-	if errQuery != nil {
-		return nil, errQuery
+// List — Query + rows.Next
+func (p *PostgresTaskRepository) List(ctx context.Context, filter model.TaskFilter) ([]model.Task, error) {
+	tasks := make([]model.Task, 0)
+
+	var rows pgx.Rows
+	var err error
+
+	if filter.Done == nil {
+		sqlQuery := `
+			SELECT id, title, done, created_at
+			FROM tasks
+			ORDER BY id;
+		`
+		rows, err = p.pool.Query(ctx, sqlQuery)
+
+	} else {
+		sqlQuery := `
+			SELECT id, title, done, created_at
+			FROM tasks
+			WHERE done = $1
+			ORDER BY id;
+		`
+		rows, err = p.pool.Query(ctx, sqlQuery, *filter.Done)
+
+	}
+
+	if err != nil {
+		return nil, err
 	}
 	defer rows.Close()
-
-	tasks := make([]model.Task, 0)
 
 	for rows.Next() {
 		var task model.Task
@@ -79,7 +96,9 @@ func (p *PostgresTaskRepository) List(ctx context.Context) ([]model.Task, error)
 	}
 
 	return tasks, nil
+
 }
+
 // GetByID — QueryRow + SELECT WHERE
 func (p *PostgresTaskRepository) GetByID(ctx context.Context, id int) (model.Task, error) {
 	var task model.Task
@@ -106,6 +125,7 @@ func (p *PostgresTaskRepository) GetByID(ctx context.Context, id int) (model.Tas
 
 	return task, nil
 }
+
 // Update — QueryRow + UPDATE RETURNING
 func (p *PostgresTaskRepository) Update(
 	ctx context.Context,
@@ -138,6 +158,7 @@ func (p *PostgresTaskRepository) Update(
 
 	return task, nil
 }
+
 // Delete — QueryRow + DELETE RETURNING id
 func (p *PostgresTaskRepository) Delete(
 	ctx context.Context,

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"task-api/internal/model"
 	"task-api/internal/service"
 )
 
@@ -38,7 +39,19 @@ func (t *TaskHandler) HandleTasks(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	if r.Method == http.MethodGet {
-		list, errList := t.serv.List(ctx)
+		var filter model.TaskFilter
+
+		doneStr := r.URL.Query().Get("done")
+		if doneStr != "" {
+			done, err := strconv.ParseBool(doneStr)
+			if err != nil {
+				writeError(w, http.StatusBadRequest, "invalid done filter")
+				return
+			}
+			filter.Done = &done
+		}
+
+		list, errList := t.serv.List(ctx, filter)
 		if errList != nil {
 			handleError(w, errList)
 			return
@@ -97,7 +110,7 @@ func (t *TaskHandler) HandleTaskByID(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		task, err := t.serv.Update(ctx, id, req.Title, req.Done)
+		task, err := t.serv.Update(r.Context(), id, req.Title, req.Done)
 		if err != nil {
 			handleError(w, err)
 			return

@@ -240,3 +240,73 @@ func TestHandleTasksPostReturnsCreatedTask(t *testing.T) {
 		t.Fatalf("expected done %t, got %t", false, task.Done)
 	}
 }
+
+func TestHandleTasksGETInvalidFilter(t *testing.T) {
+	h := newTestHandler()
+
+	reqGet := httptest.NewRequest(http.MethodGet, "/tasks?done=abc", nil)
+	rrGet := httptest.NewRecorder()
+
+	h.HandleTasks(rrGet, reqGet)
+
+	if rrGet.Code != http.StatusBadRequest {
+		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, rrGet.Code)
+	}
+}
+
+func TestHandleTasksGETDoneTrue(t *testing.T) {
+	h := newTestHandler()
+
+	bodyPost1 := strings.NewReader(`{"title":"exmpl1"}`)
+	reqPost1 := httptest.NewRequest(http.MethodPost, "/tasks", bodyPost1)
+	rrPost1 := httptest.NewRecorder()
+
+	h.HandleTasks(rrPost1, reqPost1)
+
+	if rrPost1.Code != http.StatusCreated {
+		t.Fatalf("expected status %d, got %d", http.StatusCreated, rrPost1.Code)
+	}
+
+	bodyPost2 := strings.NewReader(`{"title":"exmpl2"}`)
+	reqPost2 := httptest.NewRequest(http.MethodPost, "/tasks", bodyPost2)
+	rrPost2 := httptest.NewRecorder()
+
+	h.HandleTasks(rrPost2, reqPost2)
+
+	if rrPost2.Code != http.StatusCreated {
+		t.Fatalf("expected status %d, got %d", http.StatusCreated, rrPost2.Code)
+	}
+
+	bodyPatch := strings.NewReader(`{"title":"exmpl1 did it", "done":true}`)
+	reqPatch := httptest.NewRequest(http.MethodPatch, "/tasks/1", bodyPatch)
+	rrPatch := httptest.NewRecorder()
+
+	h.HandleTaskByID(rrPatch, reqPatch)
+
+	if rrPatch.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, rrPatch.Code)
+	}
+
+	reqGet := httptest.NewRequest(http.MethodGet, "/tasks?done=true", nil)
+	rrGet := httptest.NewRecorder()
+
+	h.HandleTasks(rrGet, reqGet)
+
+	if rrGet.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, rrGet.Code)
+	}
+
+	var tasks []model.Task
+	if err := json.NewDecoder(rrGet.Body).Decode(&tasks); err != nil {
+		t.Fatal("failed to decode", err)
+	}
+
+	if len(tasks) != 1 {
+		t.Fatalf("expected %d task, got %d", 1, len(tasks))
+	}
+
+	if !tasks[0].Done {
+		t.Fatalf("FILTER failed: expected filtered task done to be true, got: %+v, all tasks: %+v", tasks[0], tasks)
+	}
+
+}
