@@ -41,16 +41,19 @@ DB_URL — строка подключения к PostgreSQL.
 
 ```bash
 DB_URL='postgres://user:password@localhost:5432/task_api?sslmode=disable'
+```
 
 Запуск:
 
+```bash
 DB_URL='postgres://user:password@localhost:5432/task_api?sslmode=disable' go run ./cmd/app
 ``` 
 
 Тесты:
-
+```bash
 go test ./...
-
+``` 
 БД:
-
+```bash
 migrations/001_create_tasks.sql
+``` 
