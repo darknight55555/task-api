@@ -45,6 +45,7 @@ DB_URL='postgres://user:password@localhost:5432/task_api?sslmode=disable'
 Запуск:
 
 DB_URL='postgres://user:password@localhost:5432/task_api?sslmode=disable' go run ./cmd/app
+``` 
 
 Тесты:
 
