@@ -10,5 +10,7 @@ type Task struct {
 }
 
 type TaskFilter struct {
-	Done *bool
+	Done   *bool
+	Limit  int
+	Offset int
 }

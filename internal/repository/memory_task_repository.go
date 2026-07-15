@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"sort"
 	"sync"
 	"task-api/internal/model"
 	"time"
@@ -53,7 +54,21 @@ func (m *MemoryTaskRepository) List(ctx context.Context, filter model.TaskFilter
 		list = append(list, v)
 	}
 
-	return list, nil
+	sort.Slice(list, func(i, j int) bool {
+		return list[i].ID < list[j].ID
+	})
+
+	start := filter.Offset
+	if start >= len(list) {
+		return []model.Task{}, nil
+	}
+
+	end := start + filter.Limit
+	if end > len(list) {
+		end = len(list)
+	}
+
+	return list[start:end], nil
 }
 
 func (m *MemoryTaskRepository) GetByID(ctx context.Context, id int) (model.Task, error) {

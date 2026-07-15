@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -35,20 +36,67 @@ type createTaskRequest struct {
 	Title string `json:"title"`
 }
 
+func parseTaskFilter(r *http.Request) (model.TaskFilter, error) {
+	filter := model.TaskFilter{
+		Limit:  20,
+		Offset: 0,
+	}
+
+	query := r.URL.Query()
+
+	doneStr := query.Get("done")
+	if doneStr != "" {
+		done, errDone := strconv.ParseBool(doneStr)
+		if errDone != nil {
+			return model.TaskFilter{}, errors.New("invalid done filter")
+		}
+
+		filter.Done = &done
+	}
+
+	limitStr := query.Get("limit")
+	if limitStr != "" {
+		limit, errLimit := strconv.Atoi(limitStr)
+		if errLimit != nil {
+			return model.TaskFilter{}, errors.New("invalid limit filter")
+		}
+
+		if limit <= 0 {
+			return model.TaskFilter{}, errors.New("limit must be greater than 0")
+		}
+
+		if limit > 100 {
+			return model.TaskFilter{}, errors.New("limit must be less than or equal to 100")
+		}
+
+		filter.Limit = limit
+	}
+
+	offsetStr := query.Get("offset")
+	if offsetStr != "" {
+		offset, errOffset := strconv.Atoi(offsetStr)
+		if errOffset != nil {
+			return model.TaskFilter{}, errors.New("invalid offset filter")
+		}
+
+		if offset < 0 {
+			return model.TaskFilter{}, errors.New("offset must be greater than or equal to 0")
+		}
+
+		filter.Offset = offset
+	}
+
+	return filter, nil
+}
+
 func (t *TaskHandler) HandleTasks(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	if r.Method == http.MethodGet {
-		var filter model.TaskFilter
-
-		doneStr := r.URL.Query().Get("done")
-		if doneStr != "" {
-			done, err := strconv.ParseBool(doneStr)
-			if err != nil {
-				writeError(w, http.StatusBadRequest, "invalid done filter")
-				return
-			}
-			filter.Done = &done
+		filter, errFilter := parseTaskFilter(r)
+		if errFilter != nil {
+			writeError(w, http.StatusBadRequest, errFilter.Error())
+			return
 		}
 
 		list, errList := t.serv.List(ctx, filter)

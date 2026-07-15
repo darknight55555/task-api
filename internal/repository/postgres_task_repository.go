@@ -55,18 +55,20 @@ func (p *PostgresTaskRepository) List(ctx context.Context, filter model.TaskFilt
 		sqlQuery := `
 			SELECT id, title, done, created_at
 			FROM tasks
-			ORDER BY id;
+			ORDER BY id
+			LIMIT $1 OFFSET $2;
 		`
-		rows, err = p.pool.Query(ctx, sqlQuery)
+		rows, err = p.pool.Query(ctx, sqlQuery, filter.Limit, filter.Offset)
 
 	} else {
 		sqlQuery := `
 			SELECT id, title, done, created_at
 			FROM tasks
 			WHERE done = $1
-			ORDER BY id;
+			ORDER BY id
+			LIMIT $2 OFFSET $3;
 		`
-		rows, err = p.pool.Query(ctx, sqlQuery, *filter.Done)
+		rows, err = p.pool.Query(ctx, sqlQuery, *filter.Done, filter.Limit, filter.Offset)
 
 	}
 
